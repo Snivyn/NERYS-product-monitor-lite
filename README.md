@@ -9,7 +9,7 @@ A universal product monitor. Capable of monitoring any site for products based o
 NERYS will monitor specified sites for keywords and sends a Discord alert when a page has a specified keyword. This can be used to monitor any site on a product release date to automatically detect when a product has been uploaded. Useful when monitoring hundreds of sites for shops in different timezones.
 
 ### Usage:
-Add your Discord webhook URL in the appropriate fields (line 143 on other-sites.py and line 204 on shopify-sites.py), surrounded by quotation marks. You can set keywords you want to monitor at the bottom of each of the scripts, following the same format as the example. Seperate keywords with a '-' instead of a ' ' on other-sites.py.
+Add your Discord webhook URL in the appropriate fields (line 143 on other-sites.py and line 204 on shopify-sites.py), surrounded by quotation marks. You can set keywords you want to monitor at the bottom of each of the scripts, following the same format as the example. Seperate keywords with a '-' instead of a ' ' on other-sites.py. Add sites to monitor to each of the respective text files, following the same format as the examples (I suggest using Notepad++, Notepad does something weird). Proxies should also be one per line, following the same format as the examples provided in <proxies.txt>.
 
 ### Complete:
 - find all products on Shopify site by keyword
