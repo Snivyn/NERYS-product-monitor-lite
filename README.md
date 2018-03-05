@@ -1,10 +1,4 @@
-# NERYS - A Universal Product Monitor
-
-A universal product monitor. Capable of monitoring any site for products based on keywords. Optimized for Shopify. Sends alerts via Discord when new products are detected.
-
-# NERYS
-## a universal product monitor
-
+![Alt-Tag](https://i.imgur.com/V5ERvU4.png)
 ### About:
 NERYS will monitor specified sites for keywords and sends a Discord alert when a page has a specified keyword. This can be used to monitor any site on a product release date to automatically detect when a product has been uploaded. Useful when monitoring hundreds of sites for shops in different timezones.
 
