@@ -33,4 +33,5 @@ Have suggestions on how to make the monitor better? Let me know via Twitter (@sn
 
 ### Credits:
 Niveen Jegatheeswaran - That's Me! - https://github.com/snivyn/, https://twitter.com/snivynGOD
+
 kyb3r - Discord Embed - https://github.com/kyb3r/
