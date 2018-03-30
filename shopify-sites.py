@@ -47,9 +47,6 @@ from discord_hooks import Webhook
 from multiprocessing import Process
 
 
-''' ------------------------------- ERRORS ------------------------------- '''
-
-
 class FileNotFound(Exception):
     ''' Raised when a file required for the program to operate is missing. '''
 
@@ -60,8 +57,6 @@ class NoDataLoaded(Exception):
 
 class OutOfProxies(Exception):
     ''' Raised when there are no proxies left '''
-
-''' ------------------------------ FUNCTIONS ------------------------------ '''
 
 
 def read_from_txt(path):
@@ -96,112 +91,13 @@ def read_from_txt(path):
     return lines
 
 
-def get_proxy(proxy_list):
-    '''
-    (list) -> dict
-    Given a proxy list <proxy_list>, a proxy is selected and returned.
-    '''
-    # Choose a random proxy
-    proxy = random.choice(proxy_list)
-
-    # Set up the proxy to be used
-    proxies = {
-        "http": str(proxy),
-        "https": str(proxy)
-    }
-
-    # Return the proxy
-    return proxies
-
-
-def update_shopify_db(keywords, site, proxy_list):
-    log('i', "Monitoring site <" + site + ">.")
-
-    # Initialize variables
-    link = site + "/collections/all/products.atom"
-    working = False
-
-    # Get a proxy
-    proxies = get_proxy(proxy_list)
-
-    # Get the products on the site
-    try:
-        r = requests.get(link, proxies=proxies, timeout=3, verify=False)
-    except:
-        try:
-            proxies = get_proxy(proxy_list)
-            r = requests.get(link, proxies=proxies, timeout=5, verify=False)
-        except:
-            log('e', "Connection to URL <" + link + "> failed.")
-            return
-
-    xml = soup(r.text, "xml")
-    products_raw = xml.findAll('entry')
-
-    # Get products with the specified keywords
-    for product in products_raw:
-        product_found = False
-        for keyword in keywords:
-            if(not product_found):
-                # Get the product info
-                title = product.find("title").text
-                link = product.find("link")["href"]
-                tags_raw = product.findAll("s:tag")
-
-                tags = []
-                for tag in tags_raw:
-                    tags.append(tag.text.upper())
-
-                # Check if the keywords are in the product's name
-                if(keyword.upper() in title.upper() or keyword.upper() in tags):
-                    # Get the variants from the product
-                    try:
-                        r = requests.get(link + ".xml", proxies=proxies, timeout=3, verify=False)
-                        working = True
-                    except:
-                        # Get a new proxy
-                        proxies = get_proxy(proxy_list)
-                        # Try again with a new proxy
-                        try:
-                            r = requests.get(link + ".xml", proxies=proxies, timeout=5, verify=False)
-                            working = True
-                        except:
-                            working = False
-
-                    # If the site/proxy is working
-                    if(working):
-                        # Break down the product page
-                        xml = soup(r.text, "xml")
-
-                        # Get the variants for the product
-                        variants = []
-                        raw_variants = xml.findAll("variant")
-                        for raw_variant in raw_variants:
-                            variants.append((raw_variant.find("title").text, raw_variant.find("id").text))
-
-                        # Get the product's image if it's available
-                        try:
-                            image = xml.find("image").find("src").text
-                        except:
-                            image = None
-
-                        # Store the product in the database
-                        product_info = (title, link, variants, image, title, site)
-                        alert = add_to_shopify_db(product_info)
-                        product_found = True
-
-                        # Send a Discord alert if the product is new
-                        #if(alert):
-                        #    send_embed("NEW_SHOPIFY", link, variants, site, image, title)
-
-
 def send_embed(alert_type, link, fields, site, image, product):
     '''
     (str, str, list, str, str, str) -> None
     Sends a discord alert based on info provided.
     '''
 
-    url = 'ENTER YOUR WEBHOOK HERE!'
+    url = webhook
 
     embed = Webhook(url, color=123123)
 
@@ -225,6 +121,109 @@ def send_embed(alert_type, link, fields, site, image, product):
     embed.set_footer(text='NERYS by @snivynGOD', icon='https://static.zerochan.net/Daenerys.Targaryen.full.2190849.jpg', ts=True)
 
     embed.post()
+
+
+def get_proxy(proxy_list):
+    '''
+    (list) -> dict
+    Given a proxy list <proxy_list>, a proxy is selected and returned.
+    '''
+    # Choose a random proxy
+    proxy = random.choice(proxy_list)
+
+    # Set up the proxy to be used
+    proxies = {
+        "http": str(proxy),
+        "https": str(proxy)
+    }
+
+    # Return the proxy
+    return proxies
+
+
+def update_shopify_db(keywords, site, proxy_list):
+    while(True):
+        log('i', "Monitoring site <" + site + ">.")
+
+        # Initialize variables
+        link = site + "/collections/all/products.atom"
+        working = False
+
+        # Get a proxy
+        proxies = get_proxy(proxy_list)
+
+        # Get the products on the site
+        try:
+            r = requests.get(link, proxies=proxies, timeout=3, verify=False)
+        except:
+            try:
+                proxies = get_proxy(proxy_list)
+                r = requests.get(link, proxies=proxies, timeout=5, verify=False)
+            except:
+                log('e', "Connection to URL <" + link + "> failed.")
+                continue
+    
+        xml = soup(r.text, "xml")
+        products_raw = xml.findAll('entry')
+    
+        # Get products with the specified keywords
+        for product in products_raw:
+            product_found = False
+            for keyword in keywords:
+                if(not product_found):
+                    # Get the product info
+                    title = product.find("title").text
+                    link = product.find("link")["href"]
+                    tags_raw = product.findAll("s:tag")
+    
+                    tags = []
+                    for tag in tags_raw:
+                        tags.append(tag.text.upper())
+    
+                    # Check if the keywords are in the product's name or tags
+                    if(keyword.upper() in title.upper() or keyword.upper() in tags):
+                        # Get the variants from the product
+                        try:
+                            r = requests.get(link + ".xml", proxies=proxies, timeout=3, verify=False)
+                            working = True
+                        except:
+                            # Get a new proxy
+                            proxies = get_proxy(proxy_list)
+                            # Try again with a new proxy
+                            try:
+                                r = requests.get(link + ".xml", proxies=proxies, timeout=5, verify=False)
+                                working = True
+                            except:
+                                working = False
+    
+                        # If the site/proxy is working
+                        if(working):
+                            # Break down the product page
+                            xml = soup(r.text, "xml")
+    
+                            # Get the variants for the product
+                            variants = []
+                            raw_variants = xml.findAll("variant")
+                            for raw_variant in raw_variants:
+                                variants.append((raw_variant.find("title").text, raw_variant.find("id").text))
+    
+                            # Get the product's image if it's available
+                            try:
+                                image = xml.find("image").find("src").text
+                            except:
+                                image = None
+    
+                            # Store the product in the database
+                            product_info = (title, link, variants, image, title, site)
+                            alert = add_to_shopify_db(product_info)
+                            product_found = True
+    
+                            # Send a Discord alert if the product is new
+                            if(alert):
+                                send_embed("NEW_SHOPIFY", link, variants, site, image, title)
+
+        # Wait the specified timeframe before checking the site again
+        time.sleep(delay)
 
 
 def add_to_shopify_db(product):
@@ -267,6 +266,7 @@ if(__name__ == "__main__"):
         "bred toe",
         "gold toe",
         "pharrell",
+        "holi",
         "free throw line",
         "kendrick",
         "tinker",
@@ -278,13 +278,24 @@ if(__name__ == "__main__"):
         "don't trip",
         "kung fu kenny",
         "playstation",
-        "valentine",
         "ovo air jordan",
         "ovo jordan",
-        "wotherspoon"
+        "wotherspoon",
+        "nike x off-white",
+        "off-white x nike",
+        "air jordan 1",
+        "wave runner",
+        "katrina",
+        "animal pack",
+        "acronym",
+        "vf sw",
+        "the ten",
+        "the 10"
         ]
-    
-    # SET YOUR DISCORD WEBHOOK ABOVE! (LINE 204)
+
+    webhook = "https://discordapp.com/api/webhooks/412107584380600321/0vIQE8Hp8zkHxHTXfELCDLXKwpMY3r4OEFVy2Q7O8RwQIawo7sj5uBUJDjeP5Xl-DK-0"  # Put your webhook link here
+
+    delay = 10  # Lots of sites + few proxies = longer delay to avoid bans
 
     # Load proxies
     proxies = read_from_txt("proxies.txt")
@@ -292,19 +303,13 @@ if(__name__ == "__main__"):
 
     # Store sites from txt files
     shopify_sites = read_from_txt("shopify-sites.txt")
-    other_sites = read_from_txt("other-sites.txt")
-    total_sites = len(shopify_sites) + len(other_sites)
+    total_sites = len(shopify_sites)
     log('i', str(total_sites) + " sites loaded.")
 
-    # Start monitoring sites
-    while(True):
-        # Initialize variables
-        tasks = []
+    # Loop through each Shopify site
+    for site in shopify_sites:
+        # Monitor for new products
+        t = Thread(target=update_shopify_db, args=(keywords, site, proxies))
+        t.start()
+        time.sleep(1)
 
-        # Loop through each Shopify site
-        for site in shopify_sites:
-            # Monitor for new products
-            t = Thread(target=update_shopify_db, args=(keywords, site, proxies))
-            tasks.append(t)
-            t.start()
-            time.sleep(1)
