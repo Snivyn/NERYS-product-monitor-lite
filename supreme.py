@@ -78,7 +78,7 @@ def send_embed(alert_type, product):
     Sends a discord alert based on info provided.
     '''
     # Set webhook
-    url = 'INSERT YOUR WEBHOOK HERE!!'
+    url = discord_webhook
 
     # Create embed to send to webhook
     embed = Webhook(url, color=123123)
@@ -119,8 +119,11 @@ def monitor():
     except:
         log('e', "Connection to URL <" + link + "> failed. Retrying...")
         try:
-            proxies = get_proxy(proxy_list)
-            r = requests.get(link, proxies=proxies, timeout=8, verify=False)
+            if(use_proxies):
+                proxies = get_proxy(proxy_list)
+                r = requests.get(link, proxies=proxies, timeout=8, verify=False)
+            else:
+                r = requests.get(link, timeout=8, verify=False)                
         except:
             log('e', "Connection to URL <" + link + "> failed.")
             return
@@ -155,15 +158,20 @@ def monitor_supreme_product(link, product):
     except:
         # GET product name
         try:
-            proxies = get_proxy(proxy_list)
-            r = requests.get(link, proxies=proxies, timeout=5, verify=False)
+            if(use_proxies):
+                proxies = get_proxy(proxy_list)
+                r = requests.get(link, proxies=proxies, timeout=8, verify=False)
+            else:
+                r = requests.get(link, timeout=8, verify=False)
         except:
             log('e', "Connection to URL <" + link + "> failed. Retrying...")
             try:
-                proxies = get_proxy(proxy_list)
-                r = requests.get(link, proxies=proxies, timeout=8, verify=False)
+                if(use_proxies):
+                    proxies = get_proxy(proxy_list)
+                    r = requests.get(link, proxies=proxies, timeout=8, verify=False)
+                else:
+                    r = requests.get(link, timeout=8, verify=False)                  
             except:
-                proxies = get_proxy(proxy_list)
                 log('e', "Connection to URL <" + link + "> failed.")
                 return
 
@@ -175,14 +183,90 @@ def monitor_supreme_product(link, product):
         send_embed("NEW", products_list[link])
 
 
+def build_db():
+    # GET "view all" page
+    link = "http://www.supremenewyork.com/shop/all"
+    headers = {
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/60.0.3112.113 Safari/537.36"
+        }
+    proxies = get_proxy(proxy_list)
+
+    try:
+        r = requests.get(link, timeout=5, verify=False)
+    except:
+        log('e', "Connection to URL <" + link + "> failed. Retrying...")
+        try:
+            if(use_proxies):
+                proxies = get_proxy(proxy_list)
+                r = requests.get(link, proxies=proxies, timeout=8, verify=False)
+            else:
+                r = requests.get(link, timeout=8, verify=False)
+        except:
+            log('e', "Connection to URL <" + link + "> failed.")
+            return
+
+    page = soup(r.text, "html.parser")
+    products = page.findAll("div", {"class": "inner-article"})
+
+    log('i', "Checking stock of Supreme products...")
+    for product in products:
+        link = "https://www.supremenewyork.com" + product.a["href"]
+
+        # Product info
+        image = "https:" + product.a.img["src"]
+        if(product.text == "sold out"):
+            stock = False
+        else:
+            stock = True        
+
+        # GET product name
+        try:
+            if(use_proxies):
+                proxies = get_proxy(proxy_list)
+                r = requests.get(link, proxies=proxies, timeout=8, verify=False)
+            else:
+                r = requests.get(link, timeout=8, verify=False)
+        except:
+            log('e', "Connection to URL <" + link + "> failed. Retrying...")
+            proxies = get_proxy(proxy_list)
+            r = requests.get(link, proxies=proxies, timeout=8, verify=False)
+            try:
+                if(use_proxies):
+                    proxies = get_proxy(proxy_list)
+                    r = requests.get(link, proxies=proxies, timeout=8, verify=False)
+                else:
+                    r = requests.get(link, timeout=8, verify=False)                  
+            except:
+                proxies = get_proxy(proxy_list)
+                log('e', "Connection to URL <" + link + "> failed.")
+                return
+
+        title = soup(r.text, "html.parser").find("title").text
+
+        # Add product to database
+        products_list[link] = Product(link, image, title, stock)
+        log('s', "Added " + title + " to the database.")
+
+
 if(__name__ == "__main__"):
     # Ignore insecure messages
     requests.packages.urllib3.disable_warnings()
 
-    # Initialize variables
+    # Load proxies (if available)
     proxy_list = read_from_txt("proxies.txt")
+    log('i', "Loaded " + str(len(proxy_list)) + " proxies.")
+    if(len(proxy_list) == 0):
+        use_proxies = False
+    else:
+        use_proxies = True    
+
+    # Initialize variables
     products_list = {}
     proxies = get_proxy(proxy_list)
+    discord_webhook = ""  # Put your webhook here
+
+    # Build database
+    build_db()
 
     # Monitor products
     while(True):
