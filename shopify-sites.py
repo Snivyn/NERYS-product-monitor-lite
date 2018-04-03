@@ -145,8 +145,12 @@ def update_shopify_db(keywords, site, proxy_list):
     while(True):
         log('i', "Monitoring site <" + site + ">.")
 
-        # Initialize variables
-        link = site + "/collections/all/products.atom"
+        # Create link to monitor (Kith is a special case)
+        if("kith.com" in site):
+            link = "https://kith.com/collections/footwear.atom"
+        else:
+            link = site + "/collections/all/products.atom"
+
         working = False
 
         # Get a proxy
@@ -295,7 +299,7 @@ if(__name__ == "__main__"):
 
     webhook = ""  # Put your webhook link here
 
-    delay = 10  # Lots of sites + few proxies = longer delay to avoid bans
+    delay = 5  # Lots of sites + few proxies = longer delay to avoid bans
 
     # Load proxies
     proxies = read_from_txt("proxies.txt")
