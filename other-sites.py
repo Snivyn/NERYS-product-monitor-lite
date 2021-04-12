@@ -140,7 +140,7 @@ def send_embed(product):
     Sends a discord alert based on info provided.
     '''
 
-    url = 'INSERT YOUR WEBHOOK HERE'
+    url = 'https://discord.com/api/webhooks/831188773110415440/U0bgDE53a2h-1RFkwRp-h9wpJXSNc7j_wU0QlySQggHdkywPTRpkIHuBuHe-jAQWN-P4'
 
     embed = Webhook(url, color=123123)
 
@@ -225,24 +225,8 @@ if(__name__ == "__main__"):
 
     # Keywords (seperated by -)
     keywords = [
-        "bred-toe",
-        "gold-toe",
-        "pharrell",
-        "free-throw-line",
-        "kendrick",
-        "tinker",
-        "game-royal",
-        "yeezy",
-        "human-race",
-        "big-bang",
-        "dont-trip",
-        "kung-fu-kenny",
-        "playstation",
-        "valentine",
-        "ovo-air-jordan",
-        "ovo-jordan",
-        "air-jordan-1",
-        "wotherspoon"
+        "dunk",
+    
     ]
     
     # Load sites from file
